@@ -3,34 +3,26 @@
 % e-mail: jin_wu_uestc@hotmail.com
 
 
-function [q, qy] = GCF(omega, dt, gain, chi, q_, Db, Dr, valid, weight)
+function [q, qy] = GCF(omega, dt, gain, chi, q_, qy_, Db, Dr, num, weight)
 
      wx = omega(1);     wy = omega(2);     wz = omega(3);
 
-     Omg = [   0, - wx, - wy, - wz;
-              wx,    0,   wz, - wy;
-              wy, - wz,    0,   wx;
-              wz,   wy, - wx,    0];
-
      total = 0;
 
-     for i = 1 : length(valid)
-         index = valid(i);
-    
-         if(index ~= 0)
-             M1 = M1_matrix(Db(index, :));
-             M2 = M2_matrix(Db(index, :));
-             M3 = M3_matrix(Db(index, :));
+     for i = 1 : num
+         M1 = M1_matrix(Db(:, i));
+         M2 = M2_matrix(Db(:, i));
+         M3 = M3_matrix(Db(:, i));
              
-             total = total + ...
-                 weight(index) * (eye(4) - Dr(index, 1) * M1 - Dr(index, 2) * M2 - Dr(index, 3) * M3);
-         end    
+         total = total + ...
+                 weight(i) * (eye(4) - Dr(1, i) * M1 - Dr(2, i) * M2 - Dr(3, i) * M3);   
      end
 
-     qy = (eye(4) - 2 * chi * total) * q_;
+     qy = (eye(4) - 2 * chi * total) * qy_;
      qy = qy ./ norm(qy);
 
-     q = q_ + (eye(4) - gain) ./ 2 .* dt * Omg * q_;
+     q = q_ + 0.5 * dt * quaternProd(q_', [0, wx, wy, wz])';
+     q = q ./ norm(q);
      q = (1 - gain) * q + gain * qy;
      q = q ./ norm(q);
 end
